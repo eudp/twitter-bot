@@ -4,24 +4,24 @@ const cl = require('./index');
 const config = require('./config.js');
 const T = new Twitter(config);
 
-const n_friends = '5';
+const nFriends = '5';
 var count = 0;
 
-var params_friends = {
-	count: n_friends
+var paramsFriends = {
+	count: nFriends
 };
 
-function send_message (params_dm) {
+function sendMessage (paramsDm) {
 
-	T.post('direct_messages/new', params_dm, function(err, data, response){
+	T.post('direct_messages/new', paramsDm, function(err, data, response){
 		if (!err){
-			console.log(`The message was sent with success to : @${params_dm.screen_name}`);
+			console.log(`The message was sent with success to : @${paramsDm.screen_name}`);
 
 		} else {
-			console.log(`@${params_dm.screen_name} | ${err[0].code} - ${err[0].message}`);
+			console.log(`@${paramsDm.screen_name} | ${err[0].code} - ${err[0].message}`);
 		}
 
-		if (count >= Number(n_friends)-1) {
+		if (count >= Number(nFriends)-1) {
 			count = 0;
 			cl.recursiveAsyncReadLine();
 		} else {
@@ -32,19 +32,19 @@ function send_message (params_dm) {
 
 }
 
-function send_custom_message (text) {
+function sendCustomMessage (text) {
 
-	T.get('friends/list', params_friends, function(err, data, response) {
+	T.get('friends/list', paramsFriends, function(err, data, response) {
 		if (!err){
 
 			for (let i = 0; i < data.users.length; i++){
 
-				let params_dm = {
+				let paramsDm = {
 					screen_name: data.users[i].screen_name,
 					text: text
 				}
 
-				send_message(params_dm);
+				sendMessage(paramsDm);
 			}
 
 		} else {
@@ -54,15 +54,15 @@ function send_custom_message (text) {
 	});
 }
 
-function send_trends () {
+function sendTrends () {
 
-	T.get('friends/list', params_friends, function(err, data_friends, response) {
+	T.get('friends/list', paramsFriends, function(err, dataFriends, response) {
 
 		if (!err){
 
-			for (let i = 0; i < data_friends.users.length; i++){
+			for (let i = 0; i < dataFriends.users.length; i++){
 
-				request('http://woeid.rosselliot.co.nz/lookup/' + encodeURI(data_friends.users[i].location.replace(',', '')),
+				request('http://woeid.rosselliot.co.nz/lookup/' + encodeURI(dataFriends.users[i].location.replace(',', '')),
 
 				    function (error, response, body) {
 
@@ -76,27 +76,27 @@ function send_trends () {
 				      
 				        		pos = str.indexOf('"');
 
-				        		let params_trends = {
+				        		let paramsTrends = {
 									id: str.slice(0,pos)
 								}
 
-								T.get('trends/place', params_trends, function(err, trends, response){
+								T.get('trends/place', paramsTrends, function(err, dataTrends, response){
 									if (!err){
 										
-										var trends_str = 'Trends based in your location: \n';
+										var trendsStr = 'Trends based in your location: \n';
 
 										let j = 0;
-										while (j < 5 && trends[0].trends[j] != undefined) {
-											trends_str += `${trends[0].trends[j].name}\n`;
+										while (j < 5 && dataTrends[0].trends[j] != undefined) {
+											trendsStr += `${dataTrends[0].trends[j].name}\n`;
 											j++;
 										}
 
-										let params_dm = {
-											screen_name: data_friends.users[i].screen_name,
-											text: trends_str
+										let paramsDm = {
+											screen_name: dataFriends.users[i].screen_name,
+											text: trendsStr
 										}
 
-										send_message(params_dm);
+										sendMessage(paramsDm);
 
 									} else {
 										console.log(err);
@@ -105,7 +105,7 @@ function send_trends () {
 								});
 								
 				        	} else {
-				        		console.log(`Couldn't find woeid for location of @${data_friends.users[i].screen_name}`);
+				        		console.log(`Couldn't find woeid for location of @${dataFriends.users[i].screen_name}`);
 				        		count++;
 				        	}
 				        } else {
@@ -122,27 +122,27 @@ function send_trends () {
 	});
 }
 
-function send_tweet (q) {
+function sendTweet (q) {
 
-	let params_tweet = {
+	let paramsTweet = {
 		q: q,
 		count: '1',
 		result_type: 'popular'
 	}
 
-	T.get('search/tweets', params_tweet, function(err, data_tweet, response) {
+	T.get('search/tweets', paramsTweet, function(err, dataTweet, response) {
 		if (!err){
-			T.get('friends/list', params_friends, function(err, data_users, response) {
+			T.get('friends/list', paramsFriends, function(err, dataUsers, response) {
 				if (!err){
 
-					for (let i = 0; i < data_users.users.length; i++){
+					for (let i = 0; i < dataUsers.users.length; i++){
 
-						let params_dm = {
-							screen_name: data_users.users[i].screen_name,
-							text: `https://twitter.com/${data_tweet.statuses[0].user.screen_name}/status/${data_tweet.statuses[0].id_str}`
+						let paramsDm = {
+							screen_name: dataUsers.users[i].screen_name,
+							text: `https://twitter.com/${dataTweet.statuses[0].user.screen_name}/status/${dataTweet.statuses[0].id_str}`
 						}
 
-						send_message(params_dm);
+						sendMessage(paramsDm);
 					}
 
 				} else {
@@ -157,6 +157,6 @@ function send_tweet (q) {
 	});
 }
 
-exports.send_custom_message = send_custom_message;
-exports.send_trends = send_trends;
-exports.send_tweet = send_tweet;
+exports.sendCustomMessage = sendCustomMessage;
+exports.sendTrends = sendTrends;
+exports.sendTweet = sendTweet;

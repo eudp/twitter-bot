@@ -3,9 +3,9 @@ const app = require('./app');
 
 var handler = {};
 
-handler['1'] = app.send_custom_message;
-handler['2'] = app.send_trends;
-handler['3'] = app.send_tweet;
+handler['1'] = app.sendCustomMessage;
+handler['2'] = app.sendTrends;
+handler['3'] = app.sendTweet;
 
 const rl = readline.createInterface({
   input: process.stdin,
