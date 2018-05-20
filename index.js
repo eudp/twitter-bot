@@ -12,7 +12,7 @@ const rl = readline.createInterface({
   output: process.stdout
 })
 
-function close () {
+function closeReadline () {
 	rl.close()
 }
 
@@ -40,7 +40,7 @@ var recursiveAsyncReadLine = function () {
 				})
 				break
 			case 'exit':
-				rl.close()
+				closeReadline()
 				break
 			default:
 				console.log(`Please enter a valid option`)
@@ -52,4 +52,4 @@ var recursiveAsyncReadLine = function () {
 recursiveAsyncReadLine()
 
 exports.recursiveAsyncReadLine = recursiveAsyncReadLine
-exports.close = close
+exports.closeReadline = closeReadline

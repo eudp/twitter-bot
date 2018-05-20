@@ -49,7 +49,7 @@ function send_custom_message (text) {
 
 		} else {
 			console.log(err)
-			cl.close()
+			cl.closeReadline()
 		}
 	})
 }
@@ -117,7 +117,7 @@ function send_trends () {
 			}
 		} else {
 			console.log(err)
-			cl.close()
+			cl.closeReadline()
 		}
 	})
 }
@@ -147,12 +147,12 @@ function send_tweet (q) {
 
 				} else {
 					console.log(err)
-					cl.close()
+					cl.closeReadline()
 				}
 			})
 		} else {
 			console.log(err)
-			cl.close()
+			cl.closeReadline()
 		}
 	})
 }
