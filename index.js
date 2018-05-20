@@ -1,19 +1,19 @@
-const readline = require('readline')
-const app = require('./app')
+const readline = require('readline');
+const app = require('./app');
 
-var handler = {}
+var handler = {};
 
-handler['1'] = app.send_custom_message
-handler['2'] = app.send_trends
-handler['3'] = app.send_tweet
+handler['1'] = app.send_custom_message;
+handler['2'] = app.send_trends;
+handler['3'] = app.send_tweet;
 
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
-})
+});
 
 function closeReadline () {
-	rl.close()
+	rl.close();
 }
 
 var recursiveAsyncReadLine = function () {
@@ -23,33 +23,33 @@ var recursiveAsyncReadLine = function () {
 				'3) To send a popular tweet by keyword \n'
 				, (number) => {
 
-		console.log(`You chose the option ${number}`)
+		console.log(`You chose the option ${number}`);
 
 		switch(number){
 			case '1':
 				rl.question('Write your custom message: ', (answer) => {
-					handler[number](answer)
+					handler[number](answer);
 				})
-				break
+				break;
 			case '2':
-				handler[number]()
-				break
+				handler[number]();
+				break;
 			case '3':
 				rl.question('Write the keyword: ', (answer) => {
-					handler[number](answer)
+					handler[number](answer);
 				})
-				break
+				break;
 			case 'exit':
-				closeReadline()
-				break
+				closeReadline();
+				break;
 			default:
-				console.log(`Please enter a valid option`)
-				recursiveAsyncReadLine()
+				console.log(`Please enter a valid option`);
+				recursiveAsyncReadLine();
 		}
-	})
-}
+	});
+};
 
-recursiveAsyncReadLine()
+recursiveAsyncReadLine();
 
-exports.recursiveAsyncReadLine = recursiveAsyncReadLine
-exports.closeReadline = closeReadline
+exports.recursiveAsyncReadLine = recursiveAsyncReadLine;
+exports.closeReadline = closeReadline;
