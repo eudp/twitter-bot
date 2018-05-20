@@ -7,7 +7,7 @@ const T = new Twitter(config);
 const nFriends = '5';
 var count = 0;
 
-var paramsFriends = {
+const paramsFriends = {
 	count: nFriends
 };
 
@@ -74,16 +74,16 @@ function sendTrends () {
 
 				        		let str = body.slice(pos+12, body.length);
 				      
-				        		pos = str.indexOf('"');
+				        		let posEnd = str.indexOf('"');
 
 				        		let paramsTrends = {
-									id: str.slice(0,pos)
+									id: str.slice(0,posEnd)
 								}
 
 								T.get('trends/place', paramsTrends, function(err, dataTrends, response){
 									if (!err){
 										
-										var trendsStr = 'Trends based in your location: \n';
+										let trendsStr = 'Trends based in your location: \n';
 
 										let j = 0;
 										while (j < 5 && dataTrends[0].trends[j] != undefined) {
