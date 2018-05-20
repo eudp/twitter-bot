@@ -21,7 +21,7 @@ function sendMessage (paramsDm) {
 			console.log(`@${paramsDm.screen_name} | ${err[0].code} - ${err[0].message}`);
 		}
 
-		if (count >= Number(nFriends)-1) {
+		if (count >== Number(nFriends)-1) {
 			count = 0;
 			cl.recursiveAsyncReadLine();
 		} else {
@@ -70,7 +70,7 @@ function sendTrends () {
 
 				        	let pos = body.search('data-woeid');
 
-				        	if (pos != -1) {
+				        	if (pos !== -1) {
 
 				        		let str = body.slice(pos+12, body.length);
 				      
@@ -86,7 +86,7 @@ function sendTrends () {
 										let trendsStr = 'Trends based in your location: \n';
 
 										let j = 0;
-										while (j < 5 && dataTrends[0].trends[j] != undefined) {
+										while (j < 5 && dataTrends[0].trends[j] !== undefined) {
 											trendsStr += `${dataTrends[0].trends[j].name}\n`;
 											j++;
 										}
