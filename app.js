@@ -21,7 +21,7 @@ function sendMessage (paramsDm) {
 			console.log(`@${paramsDm.screen_name} | ${err[0].code} - ${err[0].message}`);
 		}
 
-		if (count >== Number(nFriends)-1) {
+		if (count >= Number(nFriends)-1) {
 			count = 0;
 			cl.recursiveAsyncReadLine();
 		} else {
