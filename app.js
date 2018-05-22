@@ -1,6 +1,6 @@
 const Twitter = require('twitter');
 const request = require('request');
-const cl = require('./index');
+const cl = require('./index.js');
 const config = require('./config.js');
 const T = new Twitter(config);
 
@@ -11,115 +11,113 @@ const paramsFriends = {
 	count: nFriends
 };
 
+var errHandlerCount = function (err) {
+    console.log(err);
+    count++;
+}
+
+var errHandlerClose = function (err) {
+    console.log(err);
+    cl.closeReadline();
+}
+
+function countLimit() {
+	if (count >= Number(nFriends)-1) {
+		count = 0;
+		cl.recursiveAsyncReadLine();
+	} else {
+		count++;
+	}
+}
+
 function sendMessage (paramsDm) {
 
-	T.post('direct_messages/new', paramsDm, function(err, data, response){
-		if (!err){
+	T.post('direct_messages/new', paramsDm)
+		.then(function (data) {
 			console.log(`The message was sent with success to : @${paramsDm.screen_name}`);
-
-		} else {
+			countLimit();
+		}, function (err) {
 			console.log(`@${paramsDm.screen_name} | ${err[0].code} - ${err[0].message}`);
-		}
-
-		if (count >= Number(nFriends)-1) {
-			count = 0;
-			cl.recursiveAsyncReadLine();
-		} else {
-			count++;
-		}
-
-	});
-
+			countLimit();
+		});
 }
 
 function sendCustomMessage (text) {
 
-	T.get('friends/list', paramsFriends, function(err, data, response) {
-		if (!err){
-
+	T.get('friends/list', paramsFriends)
+		.then(function(data) {
 			for (let i = 0; i < data.users.length; i++){
 
 				let paramsDm = {
 					screen_name: data.users[i].screen_name,
 					text: text
 				}
-
 				sendMessage(paramsDm);
 			}
-
-		} else {
-			console.log(err);
-			cl.closeReadline();
-		}
-	});
+		})
+		.catch(errHandlerClose);
 }
 
 function sendTrends () {
 
-	T.get('friends/list', paramsFriends, function(err, dataFriends, response) {
-
-		if (!err){
-
+	T.get('friends/list', paramsFriends)
+		.then( function (dataFriends) {
 			for (let i = 0; i < dataFriends.users.length; i++){
 
-				request('http://woeid.rosselliot.co.nz/lookup/' + encodeURI(dataFriends.users[i].location.replace(',', '')),
+				new Promise (function(resolve, reject) {
 
-				    function (error, response, body) {
+					request('http://woeid.rosselliot.co.nz/lookup/' + encodeURI(dataFriends.users[i].location.replace(',', '')),
 
-				        if (!error && response.statusCode == 200) {
+					    function (error, response, body) {
 
-				        	let pos = body.search('data-woeid');
+					    	if (error) {
+					    		reject(error);
+					    	} else {
+					    		let pos = body.search('data-woeid');
 
-				        	if (pos !== -1) {
+					        	if (pos !== -1) {
 
-				        		let str = body.slice(pos+12, body.length);
-				      
-				        		let posEnd = str.indexOf('"');
+					        		let str = body.slice(pos+12, body.length);
+					      
+					        		let posEnd = str.indexOf('"');
 
-				        		let paramsTrends = {
-									id: str.slice(0,posEnd)
-								}
-
-								T.get('trends/place', paramsTrends, function(err, dataTrends, response){
-									if (!err){
-										
-										let trendsStr = 'Trends based in your location: \n';
-
-										let j = 0;
-										while (j < 5 && dataTrends[0].trends[j] !== undefined) {
-											trendsStr += `${dataTrends[0].trends[j].name}\n`;
-											j++;
-										}
-
-										let paramsDm = {
-											screen_name: dataFriends.users[i].screen_name,
-											text: trendsStr
-										}
-
-										sendMessage(paramsDm);
-
-									} else {
-										console.log(err);
-										count++;
+					        		let paramsTrends = {
+										id: str.slice(0,posEnd)
 									}
-								});
-								
-				        	} else {
-				        		console.log(`Couldn't find woeid for location of @${dataFriends.users[i].screen_name}`);
-				        		count++;
-				        	}
-				        } else {
-				        	console.log(error);
-				        	count++;
-				        }
-				    }
-				);
+									resolve(paramsTrends);
+					        	} else {
+					        		reject(`Couldn't find woeid for location of @${dataFriends.users[i].screen_name}`)
+					        	}
+					    	}
+					    }
+					);
+				})
+				.then(function(paramsTrends){
+
+					return T.get('trends/place', paramsTrends);
+				})
+				.then(function (dataTrends) {
+
+					let trendsStr = 'Trends based in your location: \n';
+
+					let j = 0;
+					while (j < 5 && dataTrends[0].trends[j] !== undefined) {
+						trendsStr += `${dataTrends[0].trends[j].name}\n`;
+						j++;
+					}
+
+					let paramsDm = {
+						screen_name: dataFriends.users[i].screen_name,
+						text: trendsStr
+					}
+
+					sendMessage(paramsDm);
+				})
+				.catch(errHandlerCount);
 			}
-		} else {
-			console.log(err);
-			cl.closeReadline();
-		}
-	});
+
+		})
+		.catch(errHandlerClose);
 }
 
 function sendTweet (q) {
@@ -129,32 +127,27 @@ function sendTweet (q) {
 		count: '1',
 		result_type: 'popular'
 	}
+	let dataTweet;
+	T.get('search/tweets', paramsTweet)
+		.then(function (data) { 
 
-	T.get('search/tweets', paramsTweet, function(err, dataTweet, response) {
-		if (!err){
-			T.get('friends/list', paramsFriends, function(err, dataUsers, response) {
-				if (!err){
-
-					for (let i = 0; i < dataUsers.users.length; i++){
-
-						let paramsDm = {
-							screen_name: dataUsers.users[i].screen_name,
-							text: `https://twitter.com/${dataTweet.statuses[0].user.screen_name}/status/${dataTweet.statuses[0].id_str}`
-						}
-
-						sendMessage(paramsDm);
-					}
-
-				} else {
-					console.log(err);
-					cl.closeReadline();
+			if (data.statuses.length === 0){
+				return Promise.reject(`There are not trends for the keyword`);
+			}
+			dataTweet = data; 
+			return T.get('friends/list', paramsFriends);
+		})
+		.then(function (dataUsers) {
+			for (let i = 0; i < dataUsers.users.length; i++){
+				let paramsDm = {
+					screen_name: dataUsers.users[i].screen_name,
+					text: `https://twitter.com/${dataTweet.statuses[0].user.screen_name}/status/${dataTweet.statuses[0].id_str}`
 				}
-			})
-		} else {
-			console.log(err);
-			cl.closeReadline();
-		}
-	});
+
+				sendMessage(paramsDm);
+			}
+		})
+		.catch(errHandlerClose);
 }
 
 exports.sendCustomMessage = sendCustomMessage;
