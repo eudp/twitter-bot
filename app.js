@@ -30,25 +30,27 @@ function countLimit() {
 	}
 }
 
-function sendMessage (paramsDm) {
+async function sendMessage (paramsDm) {
 
-	T.post('direct_messages/new', paramsDm)
-	.then(function (data) {
-		return `The message was sent with success to : @${paramsDm.screen_name}`;
-	})
-	.catch(function (err) {
-		return `@${paramsDm.screen_name} | ${err[0].code} - ${err[0].message}`;
-	})
-	.then(function(data) {
-		console.log(data);
-		countLimit();
-	});
+	let text;
+	try {
+		let data = await T.post('direct_messages/new', paramsDm);
+
+		text = `The message was sent with success to : @${paramsDm.screen_name}`;
+
+	} catch(err) {
+		text = `@${paramsDm.screen_name} | ${err[0].code} - ${err[0].message}`;
+	}
+	console.log(text);
+	countLimit();
+	
 }
 
-function sendCustomMessage (text) {
+async function sendCustomMessage (text) {
 
-	T.get('friends/list', paramsFriends)
-	.then(function(data) {
+	try {
+		let data = await T.get('friends/list', paramsFriends);
+
 		for (let i = 0; i < data.users.length; i++){
 
 			let paramsDm = {
@@ -57,49 +59,56 @@ function sendCustomMessage (text) {
 			}
 			sendMessage(paramsDm);
 		}
-	})
-	.catch(errHandlerClose);
+
+	} catch(err) {
+		errHandlerClose(err);
+	}
+	
 }
 
-function sendTrends () {
+function requestWoeid (location, screenName){
+	return new Promise (function(resolve, reject) {
 
-	T.get('friends/list', paramsFriends)
-	.then( function (dataFriends) {
+		request('http://woeid.rosselliot.co.nz/lookup/' + encodeURI(location.replace(',', '')),
+
+		    function (error, response, body) {
+
+		    	if (error) {
+		    		reject(error);
+		    	} else {
+		    		let pos = body.search('data-woeid');
+
+		        	if (pos !== -1) {
+
+		        		let str = body.slice(pos+12, body.length);
+		      
+		        		let posEnd = str.indexOf('"');
+
+		        		let paramsTrends = {
+							id: str.slice(0,posEnd)
+						}
+						resolve(paramsTrends);
+		        	} else {
+		        		reject(`Couldn't find woeid for location of @${screenName}`)
+		        	}
+		    	}
+		    }
+		);
+	});
+}
+
+async function sendTrends () {
+
+	try {
+
+		let dataFriends = await T.get('friends/list', paramsFriends);
+
 		for (let i = 0; i < dataFriends.users.length; i++){
 
-			new Promise (function(resolve, reject) {
+			try {
 
-				request('http://woeid.rosselliot.co.nz/lookup/' + encodeURI(dataFriends.users[i].location.replace(',', '')),
-
-				    function (error, response, body) {
-
-				    	if (error) {
-				    		reject(error);
-				    	} else {
-				    		let pos = body.search('data-woeid');
-
-				        	if (pos !== -1) {
-
-				        		let str = body.slice(pos+12, body.length);
-				      
-				        		let posEnd = str.indexOf('"');
-
-				        		let paramsTrends = {
-									id: str.slice(0,posEnd)
-								}
-								resolve(paramsTrends);
-				        	} else {
-				        		reject(`Couldn't find woeid for location of @${dataFriends.users[i].screen_name}`)
-				        	}
-				    	}
-				    }
-				);
-			})
-			.then(function(paramsTrends){
-
-				return T.get('trends/place', paramsTrends);
-			})
-			.then(function (dataTrends) {
+				let paramsTrends = await requestWoeid(dataFriends.users[i].location, dataFriends.users[i].screen_name);
+				let dataTrends = await T.get('trends/place', paramsTrends);
 
 				let trendsStr = 'Trends based in your location: \n';
 
@@ -115,33 +124,35 @@ function sendTrends () {
 				}
 
 				sendMessage(paramsDm);
-			})
-			.catch(errHandlerCount);
+
+			} catch(err) {
+				errHandlerCount(err);
+			}
 		}
 
-	})
-	.catch(errHandlerClose);
+	} catch (err) {
+		errHandlerClose(err);
+	}
 }
 
-function sendTweet (q) {
+async function sendTweet (q) {
 
 	let paramsTweet = {
 		q: q,
 		count: '1',
 		result_type: 'popular'
 	}
-	let dataTweet;
-	
-	T.get('search/tweets', paramsTweet)
-	.then(function (data) { 
 
-		if (data.statuses.length === 0){
-			return Promise.reject(`There are not trends for the keyword`);
+	try {
+
+		let dataTweet = await T.get('search/tweets', paramsTweet);
+
+		if (dataTweet.statuses.length === 0){
+			await Promise.reject(`There are not popular tweets for the keyword`);
 		}
-		dataTweet = data; 
-		return T.get('friends/list', paramsFriends);
-	})
-	.then(function (dataUsers) {
+
+		let dataUsers = await T.get('friends/list', paramsFriends);
+
 		for (let i = 0; i < dataUsers.users.length; i++){
 			let paramsDm = {
 				screen_name: dataUsers.users[i].screen_name,
@@ -150,8 +161,11 @@ function sendTweet (q) {
 
 			sendMessage(paramsDm);
 		}
-	})
-	.catch(errHandlerClose);
+
+
+	} catch(err) {
+		errHandlerClose(err);
+	}
 }
 
 exports.sendCustomMessage = sendCustomMessage;
