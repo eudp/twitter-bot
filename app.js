@@ -39,7 +39,7 @@ async function sendMessage (paramsDm) {
 		text = `The message was sent with success to : @${paramsDm.screen_name}`;
 
 	} catch(err) {
-		text = `@${paramsDm.screen_name} | ${err[0].code} - ${err[0].message}`;
+		text = new Error(`@${paramsDm.screen_name} | ${err[0].code} - ${err[0].message}`);
 	}
 	console.log(text);
 	countLimit();
@@ -89,7 +89,7 @@ function requestWoeid (location, screenName){
 						}
 						resolve(paramsTrends);
 		        	} else {
-		        		reject(`Couldn't find woeid for location of @${screenName}`)
+		        		reject(new Error(`Couldn't find woeid for location of @${screenName}`));
 		        	}
 		    	}
 		    }
@@ -148,7 +148,7 @@ async function sendTweet (q) {
 		let dataTweet = await T.get('search/tweets', paramsTweet);
 
 		if (dataTweet.statuses.length === 0){
-			await Promise.reject(`There are not popular tweets for the keyword`);
+			await Promise.reject(new Error(`There are not popular tweets for the keyword`));
 		}
 
 		let dataUsers = await T.get('friends/list', paramsFriends);
